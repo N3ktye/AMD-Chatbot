@@ -1,85 +1,108 @@
-# DeepSeek Vision Chat — AMD Token Lab
+# AMD Chatbot — DeepSeek Vision
 
-A locally hosted, full-stack chat app for text and image conversations using AMD Token Lab's OpenAI-compatible API. The FastAPI backend keeps API credentials out of browser storage and persists conversations, message history, and image context in SQLite.
+A local chat application for conversations with text and images. The React frontend talks to a FastAPI backend, which sends requests to AMD Token Lab's OpenAI-compatible API and saves conversation history in a local SQLite database.
+
+## Features
+
+- Text conversations with `DeepSeek-V4.1-Flash` through AMD Token Lab.
+- Image questions with JPG/JPEG, PNG, and WEBP attachments (up to 4 images per message; 8 MB each).
+- Persistent conversation history, saved locally in SQLite.
+- Markdown and GitHub Flavored Markdown rendering, syntax-highlighted code, and code-copy buttons.
+- Create and delete chats, retry or regenerate responses, copy messages, and export conversations as Markdown or TXT.
+- API-key settings, connection testing, and model usage information.
+- Responsive interface for desktop and smaller screens.
 
 ## Requirements
 
-- Windows 11
+- Windows 10 or 11
 - Python 3.10 or newer
-- Node.js 20 or newer
-- An AMD Token Lab API key
+- Node.js 20 or newer, including npm
+- An AMD Token Lab API key to send model requests
 
-## Manual setup (optional when using the one-click launcher)
+## Quick start on Windows
 
-From the project directory:
+From the project folder, either double-click **`Run-App.bat`** or run the PowerShell launcher:
+
+```powershell
+.\Run-App.ps1
+```
+
+The launcher creates the project `.venv` if needed, activates it, installs the backend dependencies, and starts the backend. It installs frontend dependencies with npm if needed, starts the frontend, and opens the app in your browser when both services respond. Keep the two server windows open while using the app.
+
+The app opens at <http://127.0.0.1:5173>. If PowerShell blocks the script, use `Run-App.bat`.
+
+## Configure your API key
+
+You can add your key in **Settings & API** in the app, then use **Test connection** to check it. A key entered there is held in backend memory for that server session and is cleared when the backend restarts.
+
+Alternatively, store a server-side default in a local `.env` file:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+Replace the placeholder value for `AMD_TOKENLAB_API_KEY` with your own AMD Token Lab key. Do not commit or share `.env`.
+
+## Manual setup and run
+
+Open PowerShell in the project folder:
 
 ```powershell
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r backend\requirements.txt
+python -m pip install -r backend\requirements.txt
 Copy-Item .env.example .env
-
-cd frontend
-npm install
-cd ..
 ```
 
-Set `AMD_TOKENLAB_API_KEY` in `.env` for a server-side default, or start the app and enter the key in **Settings → API configuration**. A key entered in the UI is held in backend memory for the lifetime of that server process; it is not written to SQLite, browser local storage, or logs. Restarting the backend clears a key entered in the UI.
+Edit `.env` if you want to configure the API key there. Install frontend packages:
 
-## Start the application
+```powershell
+Set-Location frontend
+npm install
+```
 
-For one-click startup on Windows, double-click `Run-App.bat` in the project directory, or run `.\Run-App.ps1` in PowerShell. The launcher creates and activates the project `.venv`, installs the backend requirements into it, starts the backend from that environment, starts the frontend using Node.js, and opens the app in your browser when both services are ready. Frontend packages are installed separately by npm in `frontend\node_modules`. Keep the two server windows open while using the app.
-
-To start the services manually, open two PowerShell windows in the project directory.
-
-**Window 1 — backend**
+Start the backend in one PowerShell window from the project folder:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-**Window 2 — frontend**
+Start the frontend in another PowerShell window:
 
 ```powershell
-cd frontend
+Set-Location frontend
 npm run dev
 ```
 
-Open <http://localhost:5173>. API docs: <http://127.0.0.1:8000/docs>.
+Open <http://127.0.0.1:5173>. The backend health endpoint is <http://127.0.0.1:8000/api/health>, and interactive API documentation is at <http://127.0.0.1:8000/docs>.
 
-## Features
+## Project layout
 
-- AMD Token Lab API at `https://api.tokenlab.amd.com/v1`, model `DeepSeek-V4.1-Flash`
-- Text-only chat and optional JPG, JPEG, PNG, or WEBP attachments (up to 8 MB each; up to four images per message)
-- Image data sent to the model as OpenAI-compatible base64 `image_url` content and retained with its original user message for follow-up context
-- Multiple conversations persisted in `backend/data/chat_history.db`
-- New chat, conversation deletion, response retry/regeneration, copy, and Markdown/TXT export
-- Markdown, GFM, highlighted code blocks, code-copy buttons, token usage, responsive layout, and API connection testing
+```text
+backend/
+  main.py                 FastAPI application and API routes
+  requirements.txt        Python dependencies
+  data/                   Local SQLite conversation database
+frontend/
+  src/                    React application
+  package.json            Frontend dependencies and scripts
+Run-App.ps1               PowerShell setup and launcher
+Run-App.bat               Double-click Windows launcher
+```
 
-## Data and security notes
+## Data and security
 
-- The frontend only sends a user-entered key to the local backend settings endpoint; it never stores the key in local storage.
-- For persistence across backend restarts, use the `.env` environment variable rather than entering the key in the UI.
-- Chat history and uploaded image contents are stored locally in the SQLite database under `backend/data/`. Treat this folder as private user data; it is excluded from Git.
-- The service binds to localhost by default and has no user authentication. Do not expose it to an untrusted network without adding authentication and transport security.
-- Image MIME types and file signatures are validated server-side; uploaded images are size-limited.
+- The backend binds to `127.0.0.1` by default and has no user authentication. Do not expose it to an untrusted network.
+- API keys entered in Settings are sent to the local backend and held in its memory for that server session. Keys are not saved to browser storage or the chat database.
+- A key in `.env` is available to the backend process. Keep `.env` private.
+- Chats and attached image contents are stored locally in `backend/data/chat_history.db`. Keep this file private if your conversations or images are sensitive.
+- Image type and file signatures are checked by the backend. Actual model requests require a valid API key and network access to AMD Token Lab.
 
-## Validation
-
-Frontend production build:
+## Build the frontend
 
 ```powershell
-cd frontend
+Set-Location frontend
 npm run build
 ```
-
-Backend smoke check after installing dependencies:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -c "from fastapi.testclient import TestClient; from backend.main import app; print(TestClient(app).get('/api/health').json())"
-```
-
-Actual model requests and vision compatibility require a valid AMD Token Lab key and network access.
