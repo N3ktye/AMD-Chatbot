@@ -9,7 +9,7 @@ A locally hosted, full-stack chat app for text and image conversations using AMD
 - Node.js 20 or newer
 - An AMD Token Lab API key
 
-## Setup (Windows PowerShell)
+## Manual setup (optional when using the one-click launcher)
 
 From the project directory:
 
@@ -29,7 +29,9 @@ Set `AMD_TOKENLAB_API_KEY` in `.env` for a server-side default, or start the app
 
 ## Start the application
 
-Open two PowerShell windows in the project directory.
+For one-click startup on Windows, double-click `Run-App.bat` in the project directory. It creates the Python virtual environment and installs missing dependencies on first run, starts the backend and frontend in separate PowerShell windows, and opens the app in your browser when both are ready. Keep the two server windows open while using the app.
+
+To start the services manually, open two PowerShell windows in the project directory.
 
 **Window 1 — backend**
 
