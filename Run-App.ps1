@@ -4,6 +4,7 @@ $projectRoot = $PSScriptRoot
 $backendPath = Join-Path $projectRoot "backend"
 $frontendPath = Join-Path $projectRoot "frontend"
 $venvPath = Join-Path $projectRoot ".venv"
+$venvActivate = Join-Path $venvPath "Scripts\Activate.ps1"
 $venvPython = Join-Path $venvPath "Scripts\python.exe"
 $frontendUrl = "http://127.0.0.1:5173"
 $backendHealthUrl = "http://127.0.0.1:8000/api/health"
@@ -79,18 +80,21 @@ if (-not (Test-Path $venvPython)) {
     throw "The Python virtual environment was not created at $venvPath."
 }
 
-$pythonVersion = & $venvPython -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+if (-not (Test-Path $venvActivate)) {
+    throw "The virtual environment activation script was not found at $venvActivate."
+}
+
+. $venvActivate
+
+$pythonVersion = & python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
 if ($LASTEXITCODE -ne 0 -or [version]$pythonVersion -lt [version]"3.10") {
     throw "Python 3.10 or newer is required. The selected interpreter is Python $pythonVersion."
 }
 
-& $venvPython -c "import fastapi, uvicorn, openai, dotenv" 2>$null
+Write-Host "Installing backend dependencies into $env:VIRTUAL_ENV..."
+& python -m pip install --disable-pip-version-check -r (Join-Path $backendPath "requirements.txt")
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Installing backend dependencies..."
-    & $venvPython -m pip install -r (Join-Path $backendPath "requirements.txt")
-    if ($LASTEXITCODE -ne 0) {
-        throw "Backend dependency installation failed."
-    }
+    throw "Backend dependency installation failed. Check your internet connection and the Python package output above."
 }
 
 $npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
@@ -122,8 +126,8 @@ if (-not (Test-Path (Join-Path $frontendPath "node_modules\vite\bin\vite.js"))) 
 }
 
 if (-not (Test-Endpoint -Uri $backendHealthUrl)) {
-    $safePythonPath = $venvPython.Replace("'", "''")
-    $backendCommand = "& '$safePythonPath' -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000"
+    $safeActivatePath = $venvActivate.Replace("'", "''")
+    $backendCommand = ". '$safeActivatePath'; python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000"
     Start-AppTerminal -Title "AMD Chatbot Backend" -WorkingDirectory $projectRoot -Command $backendCommand
 }
 

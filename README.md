@@ -29,7 +29,7 @@ Set `AMD_TOKENLAB_API_KEY` in `.env` for a server-side default, or start the app
 
 ## Start the application
 
-For one-click startup on Windows, double-click `Run-App.bat` in the project directory. It creates the Python virtual environment and installs missing dependencies on first run, starts the backend and frontend in separate PowerShell windows, and opens the app in your browser when both are ready. Keep the two server windows open while using the app.
+For one-click startup on Windows, double-click `Run-App.bat` in the project directory, or run `.\Run-App.ps1` in PowerShell. The launcher creates and activates the project `.venv`, installs the backend requirements into it, starts the backend from that environment, starts the frontend using Node.js, and opens the app in your browser when both services are ready. Frontend packages are installed separately by npm in `frontend\node_modules`. Keep the two server windows open while using the app.
 
 To start the services manually, open two PowerShell windows in the project directory.
 
